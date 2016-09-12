@@ -1,5 +1,6 @@
 import L from 'leaflet';
-import {cors} from '../Support';
+import { cors } from '../Support';
+import { setEsriAttribution } from '../Util';
 
 var Overlay = L.ImageOverlay.extend({
   onAdd: function (map) {
@@ -28,6 +29,9 @@ export var RasterLayer = L.Layer.extend({
   },
 
   onAdd: function (map) {
+    // include 'Powered by Esri' in map attribution
+    setEsriAttribution(map);
+
     this._update = L.Util.throttle(this._update, this.options.updateInterval, this);
 
     map.on('moveend', this._update, this);
@@ -47,6 +51,14 @@ export var RasterLayer = L.Layer.extend({
       this._map.on('click', this._getPopupData, this);
       this._map.on('dblclick', this._resetPopupState, this);
     }
+
+    // add copyright text listed in service metadata
+    this.metadata(function (err, metadata) {
+      if (!err && !this.options.attribution && map.attributionControl && metadata.copyrightText) {
+        this.options.attribution = metadata.copyrightText;
+        map.attributionControl.addAttribution(this.getAttribution());
+      }
+    }, this);
   },
 
   onRemove: function (map) {
